@@ -58,15 +58,12 @@ import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
-import org.jahia.settings.SettingsBean;
 import org.json.JSONObject;
 
 /**
  * Action handler for creating new user and sending an e-mail notification.
  *
- * @author : rincevent
- * @since : JAHIA 6.1
- *        Created : 29 juin 2010
+ * @author rincevent
  */
 public class NewUser extends Action {
 
@@ -106,16 +103,16 @@ public class NewUser extends Action {
 
         final JahiaUser user = userManagerService.createUser(username, password, properties);
 
-        // Prepare mail to be sent :
-        boolean toAdministratorMail = Boolean.valueOf(getParameter(parameters, "toAdministrator", "false"));
-        String to = toAdministratorMail ? SettingsBean.getInstance().getMail_administrator():getParameter(parameters, "to");
-        String from = parameters.get("from")==null?SettingsBean.getInstance().getMail_from():getParameter(parameters, "from");
-        String cc = parameters.get("cc")==null?null:getParameter(parameters, "cc");
-        String bcc = parameters.get("bcc")==null?null:getParameter(parameters, "bcc");
-        
-        Map<String,Object> bindings = new HashMap<String,Object>();
-        bindings.put("newUser",user);
         if (mailService.isEnabled()) {
+            // Prepare mail to be sent :
+            boolean toAdministratorMail = Boolean.valueOf(getParameter(parameters, "toAdministrator", "false"));
+            String to = toAdministratorMail ? mailService.getSettings().getTo():getParameter(parameters, "to");
+            String from = parameters.get("from")==null?mailService.getSettings().getFrom():getParameter(parameters, "from");
+            String cc = parameters.get("cc")==null?null:getParameter(parameters, "cc");
+            String bcc = parameters.get("bcc")==null?null:getParameter(parameters, "bcc");
+            
+            Map<String,Object> bindings = new HashMap<String,Object>();
+            bindings.put("newUser",user);
             mailService.sendMessageWithTemplate(templatePath,bindings,to,from,cc,bcc,resource.getLocale(),"Jahia User Registration");
         }
         return new ActionResult(HttpServletResponse.SC_ACCEPTED,parameters.get("userredirectpage").get(0), new JSONObject());

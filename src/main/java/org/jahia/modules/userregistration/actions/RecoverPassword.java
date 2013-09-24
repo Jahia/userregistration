@@ -121,7 +121,7 @@ public class RecoverPassword extends Action {
             json.put("message", message);
             return new ActionResult(SC_OK, null, json);
         }
-        String from = SettingsBean.getInstance().getMail_from();
+        String from = mailService.getSettings().getFrom();
 
         String authKey = DigestUtils.md5Hex(username + System.currentTimeMillis());
         req.getSession().setAttribute("passwordRecoveryToken", new PasswordToken(authKey, user.getLocalPath()));
