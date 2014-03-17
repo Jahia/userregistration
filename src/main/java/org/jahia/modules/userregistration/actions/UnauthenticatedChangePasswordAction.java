@@ -105,11 +105,11 @@ public class UnauthenticatedChangePasswordAction extends Action {
                 PolicyEnforcementResult evalResult = pwdPolicyService.enforcePolicyOnPasswordChange(user, passwd, true);
                 if (!evalResult.isSuccess()) {
                     EngineMessages policyMsgs = evalResult.getEngineMessages();
-                    String res = "";
+                    StringBuilder res = new StringBuilder();
                     for (EngineMessage message : policyMsgs.getMessages()) {
-                        res += (message.isResource() ? MessageFormat.format(JahiaResourceBundle.getJahiaInternalResource(message.getKey(), renderContext.getUILocale()), message.getValues()) : message.getKey())+"\n";
+                        res.append((message.isResource() ? MessageFormat.format(JahiaResourceBundle.getJahiaInternalResource(message.getKey(), renderContext.getUILocale()), message.getValues()) : message.getKey())).append("\n");
                     }
-                    json.put("errorMessage", res);
+                    json.put("errorMessage", res.toString());
                 } else {
                     // change password
                     user.setPassword(passwd);
