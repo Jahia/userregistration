@@ -50,11 +50,9 @@ import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
-import org.jahia.services.render.URLGenerator;
 import org.jahia.services.render.URLResolver;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
-import org.jahia.settings.SettingsBean;
 import org.jahia.utils.i18n.JahiaResourceBundle;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -62,10 +60,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -154,7 +153,8 @@ public class RecoverPassword extends Action {
         this.templatePath = templatePath;
     }
     
-    public class PasswordToken {
+    public class PasswordToken implements Serializable {
+        private static final long serialVersionUID = 6457936874436104758L;
         String authkey;
         String userpath;
 
