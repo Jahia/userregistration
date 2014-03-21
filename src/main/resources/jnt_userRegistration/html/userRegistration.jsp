@@ -104,7 +104,7 @@
                     key="userregistration.label.form.lastname"/></label><input type="text" name="desired_lastname"
                                                                                id="desired_lastname"/></p>
 
-            <div class="divButton">
+            <div class="formMarginLeft">
                 <input type="submit" class="button"
                        value="<fmt:message key='userregistration.label.form.create'/>"/>
             </div>
