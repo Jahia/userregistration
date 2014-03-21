@@ -77,7 +77,6 @@
         </c:if>
         <input type="hidden" name="toAdministrator" value="${currentNode.properties['toAdministrator'].string}"/>
 
-        <h3 class="boxdocspacetitleh3"><fmt:message key="userregistration.label.form.name"/></h3>
         <fieldset>
             <legend><fmt:message key="userregistration.label.form.name"/></legend>
 
