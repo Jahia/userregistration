@@ -47,5 +47,5 @@
 </c:if>
 
 <c:if test="${renderContext.editMode}">
-    <fmt:message key="${fn:replace(currentNode.primaryNodeTypeName, ':', '_')}" />
+    <fmt:message key="passwordrecovery.editMessage" />
 </c:if>
