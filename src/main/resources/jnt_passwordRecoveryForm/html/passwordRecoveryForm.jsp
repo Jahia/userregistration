@@ -22,12 +22,12 @@
 
                     var password = $form.find('input[name="password"]').val();
                     if (password == '') {
-                        alert("<fmt:message key='org.jahia.admin.userMessage.specifyPassword.label'/>");
+                        alert("<fmt:message key='passwordrecovery.recover.password.mandatory'/>");
                         return false;
                     }
                     var passwordconfirm = $form.find('input[name="passwordconfirm"]').val();
                     if (passwordconfirm != password) {
-                        alert("<fmt:message key='org.jahia.admin.userMessage.passwdNotMatch.label'/>");
+                        alert("<fmt:message key='passwordrecovery.recover.password.not.matching'/>");
                         return false;
                     }
                     $.post(url, $form.serializeArray(),
@@ -53,7 +53,7 @@
                 <input type="password" id="password_${currentNode.identifier}" name="password" class="full" />
             </p>
             <p class="field">
-                <label for="passwordconfirm_${currentNode.identifier}" class="left"><fmt:message key="label.comfirmPassword" /></label>
+                <label for="passwordconfirm_${currentNode.identifier}" class="left"><fmt:message key="userregistration.label.form.confirmPassword" /></label>
                 <input type="password" id="passwordconfirm_${currentNode.identifier}" name="passwordconfirm" class="full" />
             </p>
             <p class="field">

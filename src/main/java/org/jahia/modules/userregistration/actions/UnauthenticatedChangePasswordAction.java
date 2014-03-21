@@ -84,6 +84,7 @@ import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.utils.i18n.JahiaResourceBundle;
+import org.jahia.utils.i18n.Messages;
 import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -100,6 +101,8 @@ import java.util.Map;
  * @since : JAHIA 6.6
  */
 public class UnauthenticatedChangePasswordAction extends Action {
+
+    private static final String BUNDLE = "resources.JahiaUserRegistration";
 
     @Override
     public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, Resource resource, JCRSessionWrapper session, Map<String, List<String>> parameters, URLResolver urlResolver) throws Exception {
@@ -120,12 +123,12 @@ public class UnauthenticatedChangePasswordAction extends Action {
         }
 
         if ("".equals(passwd)) {
-            String userMessage = JahiaResourceBundle.getJahiaInternalResource("org.jahia.admin.userMessage.specifyPassword.label", renderContext.getUILocale());
+            String userMessage = Messages.get(BUNDLE, "passwordrecovery.recover.password.mandatory", renderContext.getUILocale());
             json.put("errorMessage", userMessage);
         } else {
             String passwdConfirm = req.getParameter("passwordconfirm").trim();
             if (!passwdConfirm.equals(passwd)) {
-                String userMessage = JahiaResourceBundle.getJahiaInternalResource("org.jahia.admin.userMessage.passwdNotMatch.label", renderContext.getUILocale());
+                String userMessage = Messages.get(BUNDLE, "passwordrecovery.recover.password.not.matching", renderContext.getUILocale());
                 json.put("errorMessage",userMessage);
             } else {
                 JahiaPasswordPolicyService pwdPolicyService = ServicesRegistry.getInstance().getJahiaPasswordPolicyService();
@@ -142,7 +145,7 @@ public class UnauthenticatedChangePasswordAction extends Action {
                 } else {
                     // change password
                     user.setPassword(passwd);
-                    json.put("errorMessage", JahiaResourceBundle.getJahiaInternalResource("org.jahia.admin.userMessage.passwordChanged.label", renderContext.getUILocale()));
+                    json.put("errorMessage", Messages.get(BUNDLE, "passwordrecovery.recover.passwordChanged", renderContext.getUILocale()));
 
                     httpSession.setAttribute(ProcessingContext.SESSION_USER, user);
 
