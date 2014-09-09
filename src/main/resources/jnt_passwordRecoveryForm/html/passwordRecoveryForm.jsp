@@ -50,11 +50,11 @@
             <input type="hidden" name="authKey" value="${token.authkey}" />
             <p class="field">
                 <label for="password_${currentNode.identifier}" class="left"><fmt:message key="label.password" /></label>
-                <input type="password" id="password_${currentNode.identifier}" name="password" class="full" />
+                <input type="password" id="password_${currentNode.identifier}" name="password" class="full" autocomplete="off" />
             </p>
             <p class="field">
                 <label for="passwordconfirm_${currentNode.identifier}" class="left"><fmt:message key="userregistration.label.form.confirmPassword" /></label>
-                <input type="password" id="passwordconfirm_${currentNode.identifier}" name="passwordconfirm" class="full" />
+                <input type="password" id="passwordconfirm_${currentNode.identifier}" name="passwordconfirm" class="full" autocomplete="off" />
             </p>
             <p class="field">
                 <input type="submit" value="<fmt:message key='label.ok' />" class="button" />

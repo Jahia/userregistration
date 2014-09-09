@@ -86,11 +86,11 @@
 
             <p><label class="left" for="desired_password"><fmt:message
                     key="userregistration.label.form.password"/></label><input type="password" name="password"
-                                                                               id="desired_password"/></p>
+                                                                               id="desired_password" autocomplete="off"/></p>
 
             <p><label class="left" for="confirm_password"><fmt:message
                     key="userregistration.label.form.confirmPassword"/></label><input type="password" name="confirm_password"
-                                                                               id="confirm_password"/></p>
+                                                                               id="confirm_password" autocomplete="off"/></p>
 
             <p><label class="left" for="desired_email"><fmt:message
                     key="userregistration.label.form.email"/></label><input type="text" name="desired_email"
