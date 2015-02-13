@@ -3,7 +3,7 @@
  * =                   JAHIA'S DUAL LICENSING - IMPORTANT INFORMATION                       =
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2014 Jahia Solutions Group SA. All rights reserved.
+ *     Copyright (C) 2002-2015 Jahia Solutions Group SA. All rights reserved.
  *
  *     THIS FILE IS AVAILABLE UNDER TWO DIFFERENT LICENSES:
  *     1/GPL OR 2/JSEL
@@ -72,35 +72,33 @@
 package org.jahia.modules.userregistration.actions;
 
 import org.apache.commons.lang.StringUtils;
+import org.jahia.api.Constants;
 import org.jahia.bin.Action;
 import org.jahia.bin.ActionResult;
 import org.jahia.engines.EngineMessage;
 import org.jahia.engines.EngineMessages;
-import org.jahia.params.ProcessingContext;
 import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.pwdpolicy.JahiaPasswordPolicyService;
 import org.jahia.services.pwdpolicy.PolicyEnforcementResult;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
-import org.jahia.services.usermanager.JahiaUser;
-import org.jahia.utils.i18n.JahiaResourceBundle;
 import org.jahia.utils.i18n.Messages;
 import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.text.MessageFormat;
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * Action handler for change a forgotten password.
  *
- * @author : qlamerand
- * @since : JAHIA 6.6
+ * @author qlamerand
  */
 public class UnauthenticatedChangePasswordAction extends Action {
 
@@ -134,14 +132,14 @@ public class UnauthenticatedChangePasswordAction extends Action {
                 json.put("errorMessage",userMessage);
             } else {
                 JahiaPasswordPolicyService pwdPolicyService = ServicesRegistry.getInstance().getJahiaPasswordPolicyService();
-                JahiaUser user = ServicesRegistry.getInstance().getJahiaUserManagerService().lookupUser(resource.getNode().getName());
+                JCRUserNode user = ServicesRegistry.getInstance().getJahiaUserManagerService().lookupUser(resource.getNode().getName());
 
                 PolicyEnforcementResult evalResult = pwdPolicyService.enforcePolicyOnPasswordChange(user, passwd, true);
                 if (!evalResult.isSuccess()) {
                     EngineMessages policyMsgs = evalResult.getEngineMessages();
                     StringBuilder res = new StringBuilder();
                     for (EngineMessage message : policyMsgs.getMessages()) {
-                        res.append((message.isResource() ? MessageFormat.format(JahiaResourceBundle.getJahiaInternalResource(message.getKey(), renderContext.getUILocale()), message.getValues()) : message.getKey())).append("\n");
+                        res.append((message.isResource() ? Messages.getInternalWithArguments(message.getKey(), renderContext.getUILocale(), message.getValues()) : message.getKey())).append("\n");
                     }
                     json.put("errorMessage", res.toString());
                 } else {
@@ -149,7 +147,7 @@ public class UnauthenticatedChangePasswordAction extends Action {
                     user.setPassword(passwd);
                     json.put("errorMessage", Messages.get(BUNDLE, "passwordrecovery.recover.passwordChanged", renderContext.getUILocale()));
 
-                    httpSession.setAttribute(ProcessingContext.SESSION_USER, user);
+                    httpSession.setAttribute(Constants.SESSION_USER, user);
 
                     json.put("result", "success");
                 }

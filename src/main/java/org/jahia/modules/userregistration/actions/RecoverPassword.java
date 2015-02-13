@@ -3,7 +3,7 @@
  * =                   JAHIA'S DUAL LICENSING - IMPORTANT INFORMATION                       =
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2014 Jahia Solutions Group SA. All rights reserved.
+ *     Copyright (C) 2002-2015 Jahia Solutions Group SA. All rights reserved.
  *
  *     THIS FILE IS AVAILABLE UNDER TWO DIFFERENT LICENSES:
  *     1/GPL OR 2/JSEL
@@ -78,16 +78,14 @@ import org.jahia.bin.ActionResult;
 import org.jahia.bin.Jahia;
 import org.jahia.bin.Render;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
-import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
-import org.jahia.utils.i18n.JahiaResourceBundle;
+import org.jahia.utils.i18n.Messages;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -103,12 +101,9 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
  * Action handler for sending a password recovery e-mail. The e-mail body contains a link to a page with the
  * password recovery form.
  *
- * @author : qlamerand
- * @since : JAHIA 6.6
+ * @author qlamerand
  */
 public class RecoverPassword extends Action {
-
-    private static final Logger logger = LoggerFactory.getLogger(RecoverPassword.class);
 
     private JahiaUserManagerService userManagerService;
 
@@ -128,25 +123,25 @@ public class RecoverPassword extends Action {
 
         if (req.getSession().getAttribute("passwordRecoveryAsked") != null) {
             JSONObject json = new JSONObject();
-            String message = JahiaResourceBundle.getString("JahiaUserRegistration", "passwordrecovery.mail.alreadysent",
+            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.alreadysent",
                     resource.getLocale(), "Jahia User Registration");
             json.put("message", message);
             return new ActionResult(HttpServletResponse.SC_OK, null, json);
         }
 
-        JahiaUser user = userManagerService.lookupUser(username);
+        JCRUserNode user = userManagerService.lookupUser(username);
         if (user == null ) {
             JSONObject json = new JSONObject();
-            String message = JahiaResourceBundle.getString("JahiaUserRegistration", "passwordrecovery.username.invalid",
+            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.username.invalid",
                     resource.getLocale(), "Jahia User Registration");
             json.put("message", message);
             return new ActionResult(SC_OK, null, json);
         }
 
-        String to = user.getProperty("j:email");
+        String to = user.getPropertyAsString("j:email");
         if (to == null || !MailService.isValidEmailAddress(to, false)) {
             JSONObject json = new JSONObject();
-            String message = JahiaResourceBundle.getString("JahiaUserRegistration", "passwordrecovery.mail.invalid",
+            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.invalid",
                     resource.getLocale(), "Jahia User Registration");
             json.put("message", message);
             return new ActionResult(SC_OK, null, json);
@@ -154,7 +149,7 @@ public class RecoverPassword extends Action {
         String from = mailService.getSettings().getFrom();
 
         String authKey = DigestUtils.md5Hex(username + System.currentTimeMillis());
-        req.getSession().setAttribute("passwordRecoveryToken", new PasswordToken(authKey, user.getLocalPath()));
+        req.getSession().setAttribute("passwordRecoveryToken", new PasswordToken(authKey, user.getPath()));
 
         Map<String,Object> bindings = new HashMap<String,Object>();
         bindings.put("link", req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() +
@@ -166,7 +161,7 @@ public class RecoverPassword extends Action {
         req.getSession().setAttribute("passwordRecoveryAsked", true);
 
         JSONObject json = new JSONObject();
-        String message = JahiaResourceBundle.getString("JahiaUserRegistration", "passwordrecovery.mail.sent",
+        String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.sent",
                 resource.getLocale(), "Jahia User Registration");
         json.put("message", message);
         return new ActionResult(HttpServletResponse.SC_ACCEPTED, null, json);

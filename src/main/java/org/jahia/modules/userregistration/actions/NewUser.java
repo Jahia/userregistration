@@ -3,7 +3,7 @@
  * =                   JAHIA'S DUAL LICENSING - IMPORTANT INFORMATION                       =
  * ==========================================================================================
  *
- *     Copyright (C) 2002-2014 Jahia Solutions Group SA. All rights reserved.
+ *     Copyright (C) 2002-2015 Jahia Solutions Group SA. All rights reserved.
  *
  *     THIS FILE IS AVAILABLE UNDER TWO DIFFERENT LICENSES:
  *     1/GPL OR 2/JSEL
@@ -76,20 +76,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.jcr.RepositoryException;
+import javax.script.ScriptException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.jahia.bin.ActionResult;
 import org.jahia.bin.Action;
+import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.JCRTemplate;
+import org.jahia.services.content.decorator.JCRUserNode;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
-import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Action handler for creating new user and sending an e-mail notification.
@@ -97,6 +103,8 @@ import org.json.JSONObject;
  * @author rincevent
  */
 public class NewUser extends Action {
+    
+    private static Logger logger = LoggerFactory.getLogger(NewUser.class);
 
     private JahiaUserManagerService userManagerService;
     private MailService mailService;
@@ -110,16 +118,16 @@ public class NewUser extends Action {
         this.templatePath = templatePath;
     }
 
-    public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, Resource resource,
-                                  JCRSessionWrapper session, Map<String, List<String>> parameters, URLResolver urlResolver) throws Exception {
+    public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, final Resource resource,
+                                  JCRSessionWrapper session, final Map<String, List<String>> parameters, URLResolver urlResolver) throws Exception {
 
-        String username = getParameter(parameters, "username");
-        String password = getParameter(parameters, "password");
+        final String username = getParameter(parameters, "username");
+        final String password = getParameter(parameters, "password");
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
             return ActionResult.BAD_REQUEST;
         }
 
-        Properties properties = new Properties();
+        final Properties properties = new Properties();
         properties.put("j:email",parameters.get("desired_email").get(0));
         properties.put("j:firstName",parameters.get("desired_firstname").get(0));
         properties.put("j:lastName",parameters.get("desired_lastname").get(0));
@@ -132,20 +140,31 @@ public class NewUser extends Action {
             }
         }
 
-        final JahiaUser user = userManagerService.createUser(username, password, properties);
+        JCRTemplate.getInstance().doExecuteWithSystemSession(new JCRCallback<Boolean>() {
+            @Override
+            public Boolean doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                final JCRUserNode user = userManagerService.createUser(username, password, properties, session);
+                if (mailService.isEnabled()) {
+                    // Prepare mail to be sent :
+                    boolean toAdministratorMail = Boolean.valueOf(getParameter(parameters, "toAdministrator", "false"));
+                    String to = toAdministratorMail ? mailService.getSettings().getTo():getParameter(parameters, "to");
+                    String from = parameters.get("from")==null?mailService.getSettings().getFrom():getParameter(parameters, "from");
+                    String cc = parameters.get("cc")==null?null:getParameter(parameters, "cc");
+                    String bcc = parameters.get("bcc")==null?null:getParameter(parameters, "bcc");
+                    
+                    Map<String,Object> bindings = new HashMap<String,Object>();
+                    bindings.put("newUser",user);
+                    try {
+                        mailService.sendMessageWithTemplate(templatePath,bindings,to,from,cc,bcc,resource.getLocale(),"Jahia User Registration");
+                    } catch (ScriptException e) {
+                        logger.error("Error sending e-mail notification for user creation", e);
+                    }
+                }
+                
+                return true;
+            }
+        });
 
-        if (mailService.isEnabled()) {
-            // Prepare mail to be sent :
-            boolean toAdministratorMail = Boolean.valueOf(getParameter(parameters, "toAdministrator", "false"));
-            String to = toAdministratorMail ? mailService.getSettings().getTo():getParameter(parameters, "to");
-            String from = parameters.get("from")==null?mailService.getSettings().getFrom():getParameter(parameters, "from");
-            String cc = parameters.get("cc")==null?null:getParameter(parameters, "cc");
-            String bcc = parameters.get("bcc")==null?null:getParameter(parameters, "bcc");
-            
-            Map<String,Object> bindings = new HashMap<String,Object>();
-            bindings.put("newUser",user);
-            mailService.sendMessageWithTemplate(templatePath,bindings,to,from,cc,bcc,resource.getLocale(),"Jahia User Registration");
-        }
         return new ActionResult(HttpServletResponse.SC_ACCEPTED,parameters.get("userredirectpage").get(0), new JSONObject());
     }
 
