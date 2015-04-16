@@ -14,15 +14,15 @@
             $(document).ready(function() {
                 $("#recoveryPasswordForm_${currentNode.identifier}").submit(function(event) {
                     event.preventDefault();
-                    var $form = $("#recoveryPasswordForm_${currentNode.identifier}")
+                    var $form = $("#recoveryPasswordForm_${currentNode.identifier}");
                     var url = $form.attr('action');
 
-                    $form.attr('action','#')
+                    $form.attr('action','#');
                     var username = $form.find('input[name="username"]').val();
                     if (typeof(username) == 'undefined') {
                         return false;
                     }
-					var values = $form.serializeArray();
+                    var values = $form.serializeArray();
                     $("#username_${currentNode.identifier}").attr("disabled", "disabled");
                     $.post(url, values,
                             function(data) {
