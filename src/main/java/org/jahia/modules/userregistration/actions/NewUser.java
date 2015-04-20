@@ -144,6 +144,7 @@ public class NewUser extends Action {
             @Override
             public Boolean doInJCR(JCRSessionWrapper session) throws RepositoryException {
                 final JCRUserNode user = userManagerService.createUser(username, password, properties, session);
+                session.save();
                 if (mailService.isEnabled()) {
                     // Prepare mail to be sent :
                     boolean toAdministratorMail = Boolean.valueOf(getParameter(parameters, "toAdministrator", "false"));
