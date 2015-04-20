@@ -81,7 +81,7 @@
             <legend><fmt:message key="userregistration.label.form.name"/></legend>
 
             <p><label class="left" for="desired_login"><fmt:message key="userregistration.label.form.login"/></label>
-                <input type="text" name="username" id="desired_login" value="" tabindex="20"/></p>
+                <input type="text" name="username" id="desired_login" value=""/></p>
 
 
             <p><label class="left" for="desired_password"><fmt:message
