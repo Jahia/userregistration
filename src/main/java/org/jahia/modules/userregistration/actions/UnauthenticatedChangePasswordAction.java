@@ -119,7 +119,7 @@ public class UnauthenticatedChangePasswordAction extends Action {
                     user.setPassword(passwd);
                     json.put("errorMessage", Messages.get(BUNDLE, "passwordrecovery.recover.passwordChanged", renderContext.getUILocale()));
 
-                    httpSession.setAttribute(Constants.SESSION_USER, user);
+                    httpSession.setAttribute(Constants.SESSION_USER, user.getJahiaUser());
 
                     json.put("result", "success");
                 }
