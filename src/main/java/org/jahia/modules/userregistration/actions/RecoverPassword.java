@@ -43,9 +43,9 @@
  */
 package org.jahia.modules.userregistration.actions;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jahia.bin.Action;
 import org.jahia.bin.ActionResult;
 import org.jahia.bin.Jahia;
 import org.jahia.bin.Render;
@@ -56,17 +56,20 @@ import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
 import org.jahia.services.usermanager.JahiaUserManagerService;
-import org.jahia.utils.i18n.Messages;
+import org.jahia.utils.Url;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.jcr.RepositoryException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 /**
@@ -75,14 +78,27 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
  *
  * @author qlamerand
  */
-public class RecoverPassword extends Action {
+public class RecoverPassword extends BaseAction {
 
-    private JahiaUserManagerService userManagerService;
+    static final String PROPERTY_PASSWORD_RECOVERY_TOKEN = "j:passwordRecoveryToken";
 
-    private MailService mailService;
+    static final String SESSION_ATTRIBUTE_PASSWORD_RECOVERY_ASKED = "passwordRecoveryAsked";
 
-    private String templatePath;
+    private static String generateToken(JCRUserNode user, int passwordRecoveryTimeout) throws RepositoryException {
+        String path = user.getPath();
+        long timestamp = System.currentTimeMillis();
+        String authKey = DigestUtils.md5Hex(path + timestamp) + '|' + (timestamp + passwordRecoveryTimeout * 1000L);
+        user.setProperty(PROPERTY_PASSWORD_RECOVERY_TOKEN, authKey);
+        user.getSession().save();
 
+        try {
+            return Base64.encodeBase64URLSafeString((path + "|" + authKey).getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private int passwordRecoveryTimeoutSeconds;
 
     @Override
     public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, Resource resource,
@@ -92,81 +108,46 @@ public class RecoverPassword extends Action {
         if (StringUtils.isEmpty(username)) {
             return ActionResult.BAD_REQUEST;
         }
+        
+        Locale locale = renderContext.getUILocale();
 
-        if (req.getSession().getAttribute("passwordRecoveryAsked") != null) {
-            JSONObject json = new JSONObject();
-            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.alreadysent",
-                    resource.getLocale(), "Jahia User Registration");
-            json.put("message", message);
-            return new ActionResult(HttpServletResponse.SC_OK, null, json);
+        if (req.getSession().getAttribute(SESSION_ATTRIBUTE_PASSWORD_RECOVERY_ASKED) != null) {
+            return result(SC_OK, "passwordrecovery.mail.alreadysent", locale);
         }
 
         JCRUserNode user = userManagerService.lookupUser(username);
-        if (user == null ) {
-            JSONObject json = new JSONObject();
-            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.username.invalid",
-                    resource.getLocale(), "Jahia User Registration");
-            json.put("message", message);
-            return new ActionResult(SC_OK, null, json);
+        if (user == null || user.isRoot() || JahiaUserManagerService.isGuest(user)) {
+            return result(SC_OK, "passwordrecovery.username.invalid", locale);
         }
 
         String to = user.getPropertyAsString("j:email");
         if (to == null || !MailService.isValidEmailAddress(to, false)) {
-            JSONObject json = new JSONObject();
-            String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.invalid",
-                    resource.getLocale(), "Jahia User Registration");
-            json.put("message", message);
-            return new ActionResult(SC_OK, null, json);
+            return result(SC_OK, "passwordrecovery.mail.invalid", locale);
         }
         String from = mailService.getSettings().getFrom();
 
-        String authKey = DigestUtils.md5Hex(username + System.currentTimeMillis());
-        req.getSession().setAttribute("passwordRecoveryToken", new PasswordToken(authKey, user.getPath()));
+        String token = generateToken(user, passwordRecoveryTimeoutSeconds > 0 ? passwordRecoveryTimeoutSeconds
+                : req.getSession().getMaxInactiveInterval());
 
         Map<String,Object> bindings = new HashMap<String,Object>();
-        bindings.put("link", req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() +
-                Jahia.getContextPath() + Render.getRenderServletPath() + "/live/"
-                + resource.getLocale().getLanguage() + resource.getNode().getPath() + ".html?key=" + authKey);
+        bindings.put("link", Url.getServer(req) + Jahia.getContextPath() + Render.getRenderServletPath() + "/live/"
+                + resource.getLocale().getLanguage() + resource.getNode().getPath() + ".html?key=" + token);
         bindings.put("user", user);
 
         mailService.sendMessageWithTemplate(templatePath, bindings, to, from, null, null, resource.getLocale(), "Jahia User Registration");
-        req.getSession().setAttribute("passwordRecoveryAsked", true);
+        req.getSession().setAttribute(SESSION_ATTRIBUTE_PASSWORD_RECOVERY_ASKED, true);
 
-        JSONObject json = new JSONObject();
-        String message = Messages.get("resources.JahiaUserRegistration", "passwordrecovery.mail.sent",
-                resource.getLocale(), "Jahia User Registration");
-        json.put("message", message);
-        return new ActionResult(HttpServletResponse.SC_ACCEPTED, null, json);
+        return result(SC_ACCEPTED, "passwordrecovery.mail.sent", locale);
     }
 
-    public void setUserManagerService(JahiaUserManagerService userManagerService) {
-        this.userManagerService = userManagerService;
-    }
-
-    public void setMailService(MailService mailService) {
-        this.mailService = mailService;
-    }
-
-    public void setTemplatePath(String templatePath) {
-        this.templatePath = templatePath;
+    public void passwordRecoveryTimeoutSeconds(int passwordRecoveryTimeoutSeconds) {
+        this.passwordRecoveryTimeoutSeconds = passwordRecoveryTimeoutSeconds;
     }
     
-    public class PasswordToken implements Serializable {
-        private static final long serialVersionUID = 6457936874436104758L;
-        String authkey;
-        String userpath;
+    private ActionResult result(int code, String messageKey, Locale locale) throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("message", getI18nMessage(messageKey, locale));
 
-        public PasswordToken(String authkey, String userpath) {
-            this.authkey = authkey;
-            this.userpath = userpath;
-        }
-
-        public String getAuthkey() {
-            return authkey;
-        }
-
-        public String getUserpath() {
-            return userpath;
-        }
+        return new ActionResult(code, null, json);
     }
 }

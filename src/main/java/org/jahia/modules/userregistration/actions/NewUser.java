@@ -55,16 +55,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.jahia.bin.ActionResult;
-import org.jahia.bin.Action;
 import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.decorator.JCRUserNode;
-import org.jahia.services.mail.MailService;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
-import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,21 +71,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author rincevent
  */
-public class NewUser extends Action {
+public class NewUser extends BaseAction {
     
     private static Logger logger = LoggerFactory.getLogger(NewUser.class);
-
-    private JahiaUserManagerService userManagerService;
-    private MailService mailService;
-    private String templatePath;
-
-    public void setUserManagerService(JahiaUserManagerService userManagerService) {
-        this.userManagerService = userManagerService;
-    }
-
-    public void setTemplatePath(String templatePath) {
-        this.templatePath = templatePath;
-    }
 
     public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, final Resource resource,
                                   JCRSessionWrapper session, final Map<String, List<String>> parameters, URLResolver urlResolver) throws Exception {
@@ -139,9 +124,5 @@ public class NewUser extends Action {
         });
 
         return new ActionResult(HttpServletResponse.SC_ACCEPTED,parameters.get("userredirectpage").get(0), new JSONObject());
-    }
-
-    public void setMailService(MailService mailService) {
-        this.mailService = mailService;
     }
 }

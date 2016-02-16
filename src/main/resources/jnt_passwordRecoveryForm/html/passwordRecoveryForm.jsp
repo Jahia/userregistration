@@ -1,3 +1,4 @@
+<%@ page import="org.apache.commons.codec.binary.Base64" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="template" uri="http://www.jahia.org/tags/templateLib" %>
 <%@ taglib prefix="jcr" uri="http://www.jahia.org/tags/jcr" %>
@@ -6,11 +7,15 @@
 <%--@elvariable id="currentNode" type="org.jahia.services.content.JCRNodeWrapper"--%>
 <%--@elvariable id="renderContext" type="org.jahia.services.render.RenderContext"--%>
 
-<c:set var="token" value='<%=request.getSession().getAttribute("passwordRecoveryToken")%>' />
-
+<c:if test="${not empty param['key']}">
+	<% pageContext.setAttribute("requestKeyValue", new String(Base64.decodeBase64(request.getParameter("key")), "UTF-8")); %>
+</c:if>
+<c:if test="${not empty requestKeyValue}">
+	<c:set var="userpath" value="${fn:substringBefore(requestKeyValue, '|')}" />
+	<c:set var="authKey" value="${fn:substringAfter(requestKeyValue, '|')}" />
+</c:if>
 <c:choose>
-    <c:when test="${not empty token.userpath and token.authkey eq param['key']}">
-        
+    <c:when test="${not empty userpath && not empty authKey}">
     <template:addResources type="javascript" resources="jquery.min.js"/>
     <template:addResources>
         <script type="text/javascript">
@@ -45,9 +50,9 @@
 
     <template:tokenizedForm>
         <form id="changePasswordForm_${currentNode.identifier}"
-              action="<c:url value='${url.base}${token.userpath}.unauthenticatedChangePassword.do'/>"
+              action="<c:url value='${url.base}${fn:escapeXml(userpath)}.unauthenticatedChangePassword.do'/>"
               method="post">
-            <input type="hidden" name="authKey" value="${token.authkey}" />
+            <input type="hidden" name="authKey" value="${fn:escapeXml(authKey)}" />
             <p class="field">
                 <label for="password_${currentNode.identifier}" class="left"><fmt:message key="label.password" /></label>
                 <input type="password" id="password_${currentNode.identifier}" name="password" class="full" autocomplete="off" />

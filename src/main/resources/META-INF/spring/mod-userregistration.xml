@@ -3,22 +3,23 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <bean class="org.jahia.modules.userregistration.actions.NewUser">
-        <property name="name" value="newUser"/>
+    <bean name="baseUserregistrationAction" class="org.jahia.modules.userregistration.actions.BaseAction" abstract="true">
         <property name="userManagerService" ref="JahiaUserManagerService"/>
         <property name="mailService" ref="MailService"/>
+    </bean>
+    
+    <bean class="org.jahia.modules.userregistration.actions.NewUser" parent="baseUserregistrationAction">
+        <property name="name" value="newUser"/>
         <property name="templatePath" value="${userregistrationUserRegisteredTemplatePath:/mails/templates/userhasregistered.vm}"/>
     </bean>
 
-    <bean class="org.jahia.modules.userregistration.actions.RecoverPassword">
+    <bean class="org.jahia.modules.userregistration.actions.RecoverPassword" parent="baseUserregistrationAction">
         <property name="name" value="recoverPassword"/>
         <property name="requireAuthenticatedUser" value="${userregistrationRecoverPasswordRequireAuthenticatedUser:false}"/>
-        <property name="userManagerService" ref="JahiaUserManagerService"/>
-        <property name="mailService" ref="MailService"/>
         <property name="templatePath" value="${userregistrationRecoverPasswordTemplatePath:/mails/templates/recoveruserpassword.vm}"/>
     </bean>
 
-    <bean class="org.jahia.modules.userregistration.actions.UnauthenticatedChangePasswordAction">
+    <bean class="org.jahia.modules.userregistration.actions.UnauthenticatedChangePasswordAction" parent="baseUserregistrationAction">
         <property name="name" value="unauthenticatedChangePassword"/>
         <property name="requireAuthenticatedUser" value="${userregistrationChangePasswordRequireAuthenticatedUser:false}"/>
     </bean>

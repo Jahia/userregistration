@@ -45,7 +45,6 @@ package org.jahia.modules.userregistration.actions;
 
 import org.apache.commons.lang.StringUtils;
 import org.jahia.api.Constants;
-import org.jahia.bin.Action;
 import org.jahia.bin.ActionResult;
 import org.jahia.engines.EngineMessage;
 import org.jahia.engines.EngineMessages;
@@ -57,14 +56,18 @@ import org.jahia.services.pwdpolicy.PolicyEnforcementResult;
 import org.jahia.services.render.RenderContext;
 import org.jahia.services.render.Resource;
 import org.jahia.services.render.URLResolver;
+import org.jahia.services.usermanager.JahiaUserManagerService;
 import org.jahia.utils.i18n.Messages;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.jcr.RepositoryException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -72,54 +75,67 @@ import java.util.Map;
  *
  * @author qlamerand
  */
-public class UnauthenticatedChangePasswordAction extends Action {
+public class UnauthenticatedChangePasswordAction extends BaseAction {
 
-    private static final String BUNDLE = "resources.JahiaUserRegistration";
-
+    private static boolean isExpired(String timestamp) {
+        try {
+            return System.currentTimeMillis() > Long.parseLong(timestamp);
+        } catch (NumberFormatException e) {
+            return true;
+        }
+    }
+    
     @Override
     public ActionResult doExecute(HttpServletRequest req, RenderContext renderContext, Resource resource, JCRSessionWrapper session, Map<String, List<String>> parameters, URLResolver urlResolver) throws Exception {
-        String authKey = getParameter(parameters, "authKey");
-        RecoverPassword.PasswordToken passwordRecoveryToken = (RecoverPassword.PasswordToken) req.getSession().getAttribute("passwordRecoveryToken");
-        if (StringUtils.isEmpty(authKey) || passwordRecoveryToken == null || !passwordRecoveryToken.getAuthkey().equals(authKey) || !passwordRecoveryToken.getUserpath().equals(resource.getNode().getPath())) {
-            return ActionResult.BAD_REQUEST;
-        }
-        HttpSession httpSession = req.getSession();
-        httpSession.removeAttribute("passwordRecoveryToken");
-        httpSession.removeAttribute("passwordRecoveryAsked");
-
-        String passwd = req.getParameter("password").trim();
+        Locale locale = renderContext.getUILocale();
         JSONObject json = new JSONObject();
-
-        if (!resource.getNode().hasPermission("jcr:write_default") || !resource.getNode().isNodeType("jnt:user")) {
-            return new ActionResult(HttpServletResponse.SC_FORBIDDEN, null, null);
+        
+        JCRUserNode user = getTargetUser(resource, parameters, json, locale);
+        if (user == null) {
+            return json.length() > 0 ? new ActionResult(HttpServletResponse.SC_OK, null, json)
+                    : ActionResult.BAD_REQUEST;
         }
+        
+        if (!resource.getNode().hasPermission("jcr:write_default") || !resource.getNode().isNodeType("jnt:user")) {
+            // user is not allowed to change the password
+            json.put("errorMessage",
+                    Messages.getInternal("org.jahia.engines.pwdpolicy.passwordChangeNotAllowed", locale));
+            return new ActionResult(HttpServletResponse.SC_OK, null, json);
+        }
+        
+        String passwd = getParameter(parameters, "password", StringUtils.EMPTY).trim();
 
         if ("".equals(passwd)) {
-            String userMessage = Messages.get(BUNDLE, "passwordrecovery.recover.password.mandatory", renderContext.getUILocale());
+            String userMessage = getI18nMessage("passwordrecovery.recover.password.mandatory", locale);
             json.put("errorMessage", userMessage);
         } else {
-            String passwdConfirm = req.getParameter("passwordconfirm").trim();
+            String passwdConfirm = getParameter(parameters, "passwordconfirm", StringUtils.EMPTY).trim();
             if (!passwdConfirm.equals(passwd)) {
-                String userMessage = Messages.get(BUNDLE, "passwordrecovery.recover.password.not.matching", renderContext.getUILocale());
-                json.put("errorMessage",userMessage);
+                json.put("errorMessage", getI18nMessage("passwordrecovery.recover.password.not.matching", locale));
             } else {
                 JahiaPasswordPolicyService pwdPolicyService = ServicesRegistry.getInstance().getJahiaPasswordPolicyService();
-                JCRUserNode user = ServicesRegistry.getInstance().getJahiaUserManagerService().lookupUser(resource.getNode().getName());
 
                 PolicyEnforcementResult evalResult = pwdPolicyService.enforcePolicyOnPasswordChange(user, passwd, true);
                 if (!evalResult.isSuccess()) {
                     EngineMessages policyMsgs = evalResult.getEngineMessages();
                     StringBuilder res = new StringBuilder();
                     for (EngineMessage message : policyMsgs.getMessages()) {
-                        res.append((message.isResource() ? Messages.getInternalWithArguments(message.getKey(), renderContext.getUILocale(), message.getValues()) : message.getKey())).append("\n");
+                        res.append((message.isResource() ? Messages.getInternalWithArguments(message.getKey(), locale, message.getValues()) : message.getKey())).append("\n");
                     }
                     json.put("errorMessage", res.toString());
                 } else {
                     // change password
                     user.setPassword(passwd);
-                    json.put("errorMessage", Messages.get(BUNDLE, "passwordrecovery.recover.passwordChanged", renderContext.getUILocale()));
+                    json.put("errorMessage", getI18nMessage("passwordrecovery.recover.passwordChanged", locale));
 
+                    HttpSession httpSession = req.getSession();
+                    httpSession.removeAttribute("passwordRecoveryAsked");
+                    
                     httpSession.setAttribute(Constants.SESSION_USER, user.getJahiaUser());
+
+                    // remove the token
+                    user.getProperty(RecoverPassword.PROPERTY_PASSWORD_RECOVERY_TOKEN).remove();
+                    user.getSession().save();
 
                     json.put("result", "success");
                 }
@@ -127,5 +143,55 @@ public class UnauthenticatedChangePasswordAction extends Action {
         }
 
         return new ActionResult(HttpServletResponse.SC_OK, null, json);
+    }
+
+    private JCRUserNode getTargetUser(Resource resource, Map<String, List<String>> parameters, JSONObject json,
+            Locale locale) throws RepositoryException, JSONException {
+        JCRUserNode user = null;
+        String authKey = getParameter(parameters, "authKey");
+        if (StringUtils.isEmpty(authKey)) {
+            return null;
+        }
+
+        user = userManagerService.lookupUser(resource.getNode().getName());
+        // check valid user
+        if (user == null) {
+            json.put("errorMessage", getI18nMessage("passwordrecovery.username.invalid", locale));
+            return null;
+        }
+        // check that it is not root and not guest
+        if (user.isRoot() || JahiaUserManagerService.isGuest(user)) {
+            json.put("errorMessage",
+                    Messages.getInternal("org.jahia.engines.pwdpolicy.passwordChangeNotAllowed", locale));
+            return null;
+        }
+
+        // we've found our user: get the reference token
+        String token = user.getPropertyAsString(RecoverPassword.PROPERTY_PASSWORD_RECOVERY_TOKEN);
+
+        if (token == null) {
+            // we do not have a token for that user
+            json.put("errorMessage", getI18nMessage("passwordrecovery.token.invalid", locale));
+            return null;
+        }
+
+        // check if the token has expired
+        if (isExpired(StringUtils.substringAfter(token, "|"))) {
+            // remove the expired token
+            user.getProperty(RecoverPassword.PROPERTY_PASSWORD_RECOVERY_TOKEN).remove();
+            user.getSession().save();
+
+            json.put("errorMessage", getI18nMessage("passwordrecovery.token.invalid", locale));
+            return null;
+        }
+
+        // compare the submitted and referenced tokens
+        if (!token.equals(authKey)) {
+            json.put("errorMessage", getI18nMessage("passwordrecovery.token.invalid", locale));
+            return null;
+        }
+
+        // we are all good
+        return user;
     }
 }
