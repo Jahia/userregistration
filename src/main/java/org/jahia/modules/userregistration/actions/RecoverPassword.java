@@ -140,14 +140,22 @@ public class RecoverPassword extends BaseAction {
         return result(SC_ACCEPTED, "passwordrecovery.mail.sent", locale);
     }
 
-    public void passwordRecoveryTimeoutSeconds(int passwordRecoveryTimeoutSeconds) {
-        this.passwordRecoveryTimeoutSeconds = passwordRecoveryTimeoutSeconds;
-    }
-    
     private ActionResult result(int code, String messageKey, Locale locale) throws JSONException {
         JSONObject json = new JSONObject();
         json.put("message", getI18nMessage(messageKey, locale));
 
         return new ActionResult(code, null, json);
+    }
+
+    /**
+     * Set the timeout in seconds, after which the password reset token expires. If a positive non-zero value is provided here, it will be
+     * used. Otherwise, a current value of the HTTP session timeout will be used for expiration.
+     * 
+     * @param passwordRecoveryTimeoutSeconds
+     *            the timeout in seconds, after which the password reset token expires. If a positive value is provided here, it will be
+     *            used. Otherwise, a current value of the HTTP session timeout will be used for expiration
+     */
+    public void setPasswordRecoveryTimeoutSeconds(int passwordRecoveryTimeoutSeconds) {
+        this.passwordRecoveryTimeoutSeconds = passwordRecoveryTimeoutSeconds;
     }
 }

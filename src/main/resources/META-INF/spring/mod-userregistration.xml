@@ -17,6 +17,7 @@
         <property name="name" value="recoverPassword"/>
         <property name="requireAuthenticatedUser" value="${userregistrationRecoverPasswordRequireAuthenticatedUser:false}"/>
         <property name="templatePath" value="${userregistrationRecoverPasswordTemplatePath:/mails/templates/recoveruserpassword.vm}"/>
+        <property name="passwordRecoveryTimeoutSeconds" value="${userregistrationPasswordRecoveryTimeoutSeconds:0}"/>
     </bean>
 
     <bean class="org.jahia.modules.userregistration.actions.UnauthenticatedChangePasswordAction" parent="baseUserregistrationAction">
