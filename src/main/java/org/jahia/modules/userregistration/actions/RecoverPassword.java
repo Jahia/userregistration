@@ -114,8 +114,8 @@ public class RecoverPassword extends BaseAction {
         if (req.getSession().getAttribute(SESSION_ATTRIBUTE_PASSWORD_RECOVERY_ASKED) != null) {
             return result(SC_OK, "passwordrecovery.mail.alreadysent", locale);
         }
-
-        JCRUserNode user = userManagerService.lookupUser(username);
+        String siteKey = resource.getNode().getResolveSite().getSiteKey();
+        JCRUserNode user = userManagerService.lookupUser(username,siteKey,true);
         if (user == null || user.isRoot() || JahiaUserManagerService.isGuest(user)) {
             return result(SC_OK, "passwordrecovery.username.invalid", locale);
         }

@@ -152,8 +152,8 @@ public class UnauthenticatedChangePasswordAction extends BaseAction {
         if (StringUtils.isEmpty(authKey)) {
             return null;
         }
-
-        user = userManagerService.lookupUser(resource.getNode().getName());
+        String siteKey = resource.getNode().getResolveSite().getSiteKey();
+        user = userManagerService.lookupUser(resource.getNode().getName(),siteKey,true);
         // check valid user
         if (user == null) {
             json.put("errorMessage", getI18nMessage("passwordrecovery.username.invalid", locale));
