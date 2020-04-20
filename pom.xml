@@ -63,6 +63,9 @@
     <url>scm:git:git@github.com:Jahia/userregistration.git</url>
     <tag>HEAD</tag>
   </scm>
+  <properties>
+    <jahia-module-signature>MC0CFHcEfyvT+DGmDk1/arw/mB8LUmztAhUAjTWGWYRAzZDr/oXwb4GzJ4LiU5k=</jahia-module-signature>
+  </properties>
   <repositories>
     <repository>
       <releases>
