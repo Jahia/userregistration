@@ -49,7 +49,7 @@
   <parent>
     <groupId>org.jahia.modules</groupId>
     <artifactId>jahia-modules</artifactId>
-    <version>8.0.0.0</version>
+    <version>8.0.1.0-SNAPSHOT</version>
     <relativePath />
   </parent>
   <artifactId>userregistration</artifactId>
@@ -65,7 +65,7 @@
   </scm>
   <properties>
     <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
-    <jahia-module-signature>MC0CFHcEfyvT+DGmDk1/arw/mB8LUmztAhUAjTWGWYRAzZDr/oXwb4GzJ4LiU5k=</jahia-module-signature>
+    <jahia-module-signature>MC0CFQCL2fPMj0+xuwlnFnKr2uI/9UA1zwIUBaWS7l/ot7jGJh2qTk5T5k1OS0A=</jahia-module-signature>
   </properties>
   <repositories>
     <repository>

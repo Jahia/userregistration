@@ -7,14 +7,16 @@
         <property name="userManagerService" ref="JahiaUserManagerService"/>
         <property name="mailService" ref="MailService"/>
     </bean>
-    
+
     <bean class="org.jahia.modules.userregistration.actions.NewUser" parent="baseUserregistrationAction">
         <property name="name" value="newUser"/>
+        <property name="requiredMethods" value="POST"/>
         <property name="templatePath" value="${userregistrationUserRegisteredTemplatePath:/mails/templates/userhasregistered.vm}"/>
     </bean>
 
     <bean class="org.jahia.modules.userregistration.actions.RecoverPassword" parent="baseUserregistrationAction">
         <property name="name" value="recoverPassword"/>
+        <property name="requiredMethods" value="POST"/>
         <property name="requireAuthenticatedUser" value="${userregistrationRecoverPasswordRequireAuthenticatedUser:false}"/>
         <property name="templatePath" value="${userregistrationRecoverPasswordTemplatePath:/mails/templates/recoveruserpassword.vm}"/>
         <property name="passwordRecoveryTimeoutSeconds" value="${userregistrationPasswordRecoveryTimeoutSeconds:0}"/>
@@ -22,6 +24,7 @@
 
     <bean class="org.jahia.modules.userregistration.actions.UnauthenticatedChangePasswordAction" parent="baseUserregistrationAction">
         <property name="name" value="unauthenticatedChangePassword"/>
+        <property name="requiredMethods" value="POST"/>
         <property name="requireAuthenticatedUser" value="${userregistrationChangePasswordRequireAuthenticatedUser:false}"/>
     </bean>
 </beans>
