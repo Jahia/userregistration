@@ -8,27 +8,31 @@
 <%--@elvariable id="currentAliasUser" type="org.jahia.services.usermanager.JahiaUser"--%>
 
 <c:if test="${!renderContext.loggedIn || currentAliasUser.username eq 'guest'}">
-    <template:addResources type="javascript" resources="jquery.min.js"/>
     <template:addResources>
         <script type="text/javascript">
-            $(document).ready(function() {
-                $("#recoveryPasswordForm_${currentNode.identifier}").submit(function(event) {
+            document.addEventListener("DOMContentLoaded", function(){
+                document.querySelector("#recoveryPasswordForm_${currentNode.identifier}").addEventListener("submit", function(event) {
                     event.preventDefault();
-                    var $form = $("#recoveryPasswordForm_${currentNode.identifier}");
-                    var url = $form.attr('action');
+                    var form = this;
+                    var url = form.getAttribute('action');
 
-                    $form.attr('action','#');
-                    var username = $form.find('input[name="username"]').val();
-                    if (typeof(username) == 'undefined') {
+                    form.setAttribute('action','#');
+                    var username = form.querySelector('input[name="username"]').value;
+                    if (typeof(username) === 'undefined') {
                         return false;
                     }
-                    var values = $form.serializeArray();
-                    $("#username_${currentNode.identifier}").attr("disabled", "disabled");
-                    $.post(url, values,
-                            function(data) {
-                                alert(data['message']);
-                            },
-                            "json");
+
+                    xmlhttp=new XMLHttpRequest();
+                    xmlhttp.onreadystatechange=function() {
+                        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+                            let data = JSON.parse(xmlhttp.responseText);
+                            alert(data['message'])
+                        }
+                    }
+                    xmlhttp.open("POST", url, true);
+                    xmlhttp.setRequestHeader("Accept", "application/json")
+                    var formData = new FormData(form);
+                    xmlhttp.send(formData);
                     return false;
                 });
             });
