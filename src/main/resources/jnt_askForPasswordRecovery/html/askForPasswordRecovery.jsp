@@ -44,7 +44,7 @@
               action="<c:url value='${url.base}${currentNode.properties.passChangePage.node.path}.recoverPassword.do'/>"
               method="post">
             <label for="username_${currentNode.identifier}" class="left"><fmt:message key='passwordrecovery.username' /></label>
-            <input type="text" id="username_${currentNode.identifier}" name="username" class="full" />
+            <input type="text" id="username_${currentNode.identifier}" name="username" class="full" required/>
             <input type="submit" value="<fmt:message key='passwordrecovery.recover' />" class="button" />
         </form>
     </template:tokenizedForm>
