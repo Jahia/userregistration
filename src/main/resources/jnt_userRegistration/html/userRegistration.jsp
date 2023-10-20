@@ -12,52 +12,17 @@
 <%--@elvariable id="renderContext" type="org.jahia.services.render.RenderContext"--%>
 <%--@elvariable id="currentResource" type="org.jahia.services.render.Resource"--%>
 <%--@elvariable id="url" type="org.jahia.services.render.URLGenerator"--%>
-<template:addResources type="javascript" resources="jquery.min.js,jquery.validate.js"/>
 <c:if test="${not renderContext.liveMode || not renderContext.loggedIn}">
     <script type="text/javascript">
-        $(document).ready(function() {
-            $("#newUser").validate({
-                rules: {
-                    desired_firstname : "required",
-                    desired_lastname: "required",
-                    username: {
-                        required: true,
-                        minlength: 2
-                    },
-                    password: {
-                        required: true,
-                        minlength: 6
-                    },
-                    confirm_password: {
-                        required: true,
-                        minlength: 6,
-                        equalTo: "#desired_password"
-                    },
-                    desired_email: {
-                        required: true,
-                        email: true
-                    }
-                },
-                messages: {
-                    desired_firstname: "<fmt:message key='userregistration.label.askFirstname'/>",
-                    desired_lastname: "<fmt:message key='userregistration.label.askLastname'/>",
-                    username: {
-                        required: "<fmt:message key='userregistration.label.askUsername'/>",
-                        minlength: "<fmt:message key='userregistration.label.usernameSizeWarning'/>"
-                    },
-                    password: {
-                        required: "<fmt:message key='userregistration.label.askPassword'/>",
-                        minlength: "<fmt:message key='userregistration.label.passwordSizeWarning'/>"
-                    },
-                    confirm_password: {
-                        required: "<fmt:message key='userregistration.label.askPassword'/>",
-                        minlength: "<fmt:message key='userregistration.label.passwordSizeWarning'/>",
-                        equalTo: "<fmt:message key='userregistration.label.validatePassword'/>"
-                    },
-                    desired_email: "<fmt:message key='userregistration.label.validateEmail'/>"
-                }
-            });
-        });
+        function onChange() {
+            const password = document.querySelector('input[name=password]');
+            const confirm = document.querySelector('input[name=confirm_password]');
+            if (confirm.value === password.value) {
+                confirm.setCustomValidity('');
+            } else {
+                confirm.setCustomValidity('<fmt:message key='userregistration.label.validatePassword'/>');
+            }
+        }
     </script>
     <div class="Form">
 <template:tokenizedForm>
@@ -81,27 +46,27 @@
             <legend><fmt:message key="userregistration.label.form.name"/></legend>
 
             <p><label class="left" for="desired_login"><fmt:message key="userregistration.label.form.login"/></label>
-                <input type="text" name="username" id="desired_login" value=""/></p>
+                <input type="text" name="username" id="desired_login" value="" required minlength="2"/></p>
 
 
             <p><label class="left" for="desired_password"><fmt:message
-                    key="userregistration.label.form.password"/></label><input type="password" name="password"
-                                                                               id="desired_password" autocomplete="off"/></p>
+                    key="userregistration.label.form.password"/></label><input type="password" name="password" required minlength="6"
+                                                                               id="desired_password" autocomplete="off" onchange="onChange()"/></p>
 
             <p><label class="left" for="confirm_password"><fmt:message
-                    key="userregistration.label.form.confirmPassword"/></label><input type="password" name="confirm_password"
-                                                                               id="confirm_password" autocomplete="off"/></p>
+                    key="userregistration.label.form.confirmPassword"/></label><input type="password" name="confirm_password" required minlength="6"
+                                                                               id="confirm_password" autocomplete="off" onchange="onChange()"/></p>
 
             <p><label class="left" for="desired_email"><fmt:message
-                    key="userregistration.label.form.email"/></label><input type="text" name="desired_email"
+                    key="userregistration.label.form.email"/></label><input type="email" name="desired_email" required
                                                                             id="desired_email"/></p>
 
             <p><label class="left" for="desired_firstname"><fmt:message
-                    key="userregistration.label.form.firstname"/></label><input type="text" name="desired_firstname"
+                    key="userregistration.label.form.firstname"/></label><input type="text" name="desired_firstname" required
                                                                                 id="desired_firstname"/></p>
 
             <p><label class="left" for="desired_lastname"><fmt:message
-                    key="userregistration.label.form.lastname"/></label><input type="text" name="desired_lastname"
+                    key="userregistration.label.form.lastname"/></label><input type="text" name="desired_lastname" required
                                                                                id="desired_lastname"/></p>
 
             <div class="formMarginLeft">

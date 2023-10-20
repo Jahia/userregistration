@@ -16,33 +16,40 @@
 </c:if>
 <c:choose>
     <c:when test="${not empty userpath && not empty authKey}">
-    <template:addResources type="javascript" resources="jquery.min.js"/>
     <template:addResources>
         <script type="text/javascript">
-            $(document).ready(function() {
-                $("#changePasswordForm_${currentNode.identifier}").submit(function(event) {
+            document.addEventListener("DOMContentLoaded", function(){
+                document.querySelector("#changePasswordForm_${currentNode.identifier}").addEventListener("submit", function(event) {
                     event.preventDefault();
-                    var $form = $(this);
-                    var url = $form.attr('action');
+                    var form = this;
+                    var url = form.getAttribute('action');
 
-                    var password = $form.find('input[name="password"]').val();
-                    if (password == '') {
+                    var password = form.querySelector('input[name="password"]').value;
+                    if (password === '') {
                         alert("<fmt:message key='passwordrecovery.recover.password.mandatory'/>");
                         return false;
                     }
-                    var passwordconfirm = $form.find('input[name="passwordconfirm"]').val();
-                    if (passwordconfirm != password) {
+                    var passwordconfirm = form.querySelector('input[name="passwordconfirm"]').value;
+                    if (passwordconfirm !== password) {
                         alert("<fmt:message key='passwordrecovery.recover.password.not.matching'/>");
                         return false;
                     }
-                    $.post(url, $form.serializeArray(),
-                            function(data) {
-                                alert(data['errorMessage']);
-                                if (data['result'] == 'success') {
-                                    window.location.reload();
-                                }
-                            },
-                            "json");
+
+
+                    xmlhttp = new XMLHttpRequest();
+                    xmlhttp.onreadystatechange=function() {
+                        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+                            var data = JSON.parse(xmlhttp.responseText);
+                            alert(data['errorMessage']);
+                            if (data['result'] === 'success') {
+                                window.location.reload();
+                            }
+                        }
+                    }
+                    xmlhttp.open("POST", url, true);
+                    xmlhttp.setRequestHeader("Accept", "application/json")
+                    var formData = new FormData(form);
+                    xmlhttp.send(formData);
                 });
             });
         </script>
